@@ -1,0 +1,11 @@
+services:
+  api:
+    build:
+      context: ./sentiment_backend
+      dockerfile: dockerfile
+    container_name: flask_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sentiment_backend:/app
+    command: flask --app main run --host 0.0.0.0 --port 8000 --debug

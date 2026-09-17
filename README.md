@@ -1,53 +1,35 @@
-# NLP / LLMOps / Knowledge Graphs — Week 02
+# PDF to sentences
 
-This repository is from the course **Natural language processing, large language model operations and knowledge graphs**, week 02.
+A small pipeline that takes a PDF, extracts the body text, and returns a list of sentences.
 
-The assignment is a bilingual (English and Danish) sentiment analysis Flask service for short DTU course evaluations.
+Three Docker services work together:
 
-## What is in this repo
+- **GROBID** (`:8070`) converts the PDF to TEI XML with sentence segmentation
+- **API** (`:8000`) FastAPI service that wraps GROBID
+- **UI** (`:8001`) simple upload page to try the API in a browser
 
-| Path | Description |
-| --- | --- |
-| `sentiment_backend/` | Flask service that scores text with [AFINN](https://github.com/fnielsen/afinn) (English and Danish lexicons). |
-| `test/sentiment_backend/` | Basic API tests for positive and negative examples. |
-| `docker-compose.yml` | Runs the Flask API. |
+The API endpoint is `POST /v1/extract-sentences` with a form field `pdf_file`. It responds with JSON:
 
-The API contract is:
+```json
+{ "sentences": ["First sentence.", "Second sentence."] }
+```
 
-- **POST** `/v1/sentiment`
-- Request: `{"text": " "}`
-- Response: `{"score":}`
-
-The backend averages the English and Danish AFINN scores.
-
-## How to run
-
-### Docker (recommended)
-
-From the project root:
+## Run
 
 ```bash
 docker compose up --build
 ```
 
-Then open:
-
-- API: http://localhost:8000
-
-Stop with `Ctrl+C`, or `docker compose down`.
-
-### Tests
-
-With the backend dependencies installed:
+Then open http://localhost:8001 or call the API:
 
 ```bash
-pip install -r sentiment_backend/requirements.txt
-python test/sentiment_backend/test_main.py
+curl -s -F pdf_file=@ui/2303.15133.pdf http://localhost:8000/v1/extract-sentences
 ```
 
-### Run without Docker
+## Tests
+
+GROBID must be running on `localhost:8070`.
 
 ```bash
-pip install -r sentiment_backend/requirements.txt
-flask --app sentiment_backend/main run --host 0.0.0.0 --port 8000
+python3 -m pytest test/backend/test_main.py
 ```

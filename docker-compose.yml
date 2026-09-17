@@ -1,11 +1,39 @@
 services:
+  grobid:
+    image: grobid/grobid:0.9.1-crf
+    container_name: grobid
+    ports:
+      - "8070:8070"
+    init: true
+    ulimits:
+      core: 0
+
   api:
     build:
-      context: ./sentiment_backend
+      context: ./backend
       dockerfile: dockerfile
-    container_name: flask_app
+    container_name: fastapi_app
     ports:
       - "8000:8000"
     volumes:
-      - ./sentiment_backend:/app
-    command: flask --app main run --host 0.0.0.0 --port 8000 --debug
+      - ./backend:/app
+    environment:
+      GROBID_URL: http://grobid:8070
+    depends_on:
+      - grobid
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: dockerfile
+    container_name: ui
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ui:/app
+    environment:
+      SENTENCE_SERVICE_URL: http://api:8000/v1/extract-sentences
+    depends_on:
+      - api
+    command: uvicorn pdf_to_sentences_ui:app --host 0.0.0.0 --port 8001 --reload
